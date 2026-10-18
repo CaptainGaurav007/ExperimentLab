@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ExperimentLab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4; --panel:#FFFFFF; --ink:#17212B; --muted:#5B6773; --line:#D3DAE1;
+  --accent:#2447D6; --ship:#1F7A4D; --reject:#B23A32; --cont:#98660A;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --sans:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161C; --panel:#18212A; --ink:#E7ECF1; --muted:#98A5B1; --line:#2C3945;
+    --accent:#7B96FF; --ship:#58C58B; --reject:#F0867D; --cont:#E0AE55;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+header{padding:28px clamp(16px,4vw,48px) 8px}
+header h1{font:600 28px/1.2 var(--serif);margin:0}
+header p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+main{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px;padding:16px clamp(16px,4vw,48px) 48px;align-items:start}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px}
+h2{font:600 18px/1.3 var(--serif);margin:0 0 12px}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 2px}
+input{width:100%;padding:8px 10px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.group{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.group h3{font:600 15px var(--sans);margin:0 0 6px}
+.seg{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr auto;gap:4px;margin-bottom:4px}
+.seg input{padding:6px 6px;font-size:13px}
+.seghead{font-size:12px;color:var(--muted)}
+button{font:500 15px var(--sans);padding:9px 14px;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.primary{color:#0b1020}}
+button.ghost{background:transparent;color:var(--accent)}
+button.small{padding:4px 8px;font-size:13px}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+#out{display:grid;gap:20px}
+.verdict{border-left:6px solid var(--muted);padding-left:14px}
+.verdict .word{font:600 34px/1.1 var(--serif)}
+.verdict.ship{border-color:var(--ship)} .verdict.ship .word{color:var(--ship)}
+.verdict.reject{border-color:var(--reject)} .verdict.reject .word{color:var(--reject)}
+.verdict.continue{border-color:var(--cont)} .verdict.continue .word{color:var(--cont)}
+.verdict p{margin:8px 0 0;max-width:68ch}
+.facts{display:flex;flex-wrap:wrap;gap:6px 24px;margin-top:12px;color:var(--muted);font-size:14px}
+.facts b{color:var(--ink);font-weight:600}
+svg{width:100%;height:auto;display:block}
+svg text{fill:var(--ink);font:12px var(--sans)}
+svg .m{fill:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500}
+.yes{color:var(--ship);font-weight:600} .no{color:var(--muted)}
+.note{color:var(--muted);font-size:14px;margin:8px 0 0;max-width:70ch}
+.err{color:var(--reject);font-weight:500}
+.study{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:4px}
+.study h3{margin:0 0 4px;font:600 15px var(--sans)}
+.hide{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>ExperimentLab</h1>
+  <p>Enter the results of an A/B test. You get a ship, reject or continue call, with the uncertainty shown.</p>
+</header>
+<main>
+  <section aria-label="Experiment inputs">
+    <h2>Experiment data</h2>
+    <div class="row2">
+      <div><label for="cu">Control users</label><input id="cu" type="number" min="2" value="10000"></div>
+      <div><label for="cc">Control conversions</label><input id="cc" type="number" min="0" value="1000"></div>
+      <div><label for="tu">Treatment users</label><input id="tu" type="number" min="2" value="10000"></div>
+      <div><label for="tc">Treatment conversions</label><input id="tc" type="number" min="0" value="1120"></div>
+      <div><label for="me">Smallest gain worth shipping (points)</label><input id="me" type="number" step="0.1" min="0.01" value="0.5"></div>
+      <div><label for="al">Alpha</label><input id="al" type="number" step="0.01" min="0.001" max="0.2" value="0.05"></div>
+    </div>
+
+    <div class="group">
+      <h3>Guardrail metric</h3>
+      <p class="note" style="margin:0 0 6px">A metric that must not get worse, such as error rate.</p>
+      <label for="gn">Name</label><input id="gn" value="Error rate">
+      <div class="row2">
+        <div><label for="gcu">Control users</label><input id="gcu" type="number" value="10000"></div>
+        <div><label for="gcc">Control errors</label><input id="gcc" type="number" value="200"></div>
+        <div><label for="gtu">Treatment users</label><input id="gtu" type="number" value="10000"></div>
+        <div><label for="gtc">Treatment errors</label><input id="gtc" type="number" value="205"></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Segments</h3>
+      <div class="seg seghead"><span>Name</span><span>Ctrl users</span><span>Ctrl conv</span><span>Treat users</span><span>Treat conv</span><span></span></div>
+      <div id="segs"></div>
+      <button class="ghost small" id="addseg" type="button">Add segment</button>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="run" type="button">Analyze experiment</button>
+    </div>
+    <p id="err" class="err" role="alert"></p>
+  </section>
+
+  <div id="out">
+    <section id="empty"><h2>Result</h2><p class="note">Press “Analyze experiment” to see the recommendation.</p></section>
+    <section id="result" class="hide" aria-live="polite">
+      <div id="verdict" class="verdict"></div>
+      <div class="facts" id="facts"></div>
+    </section>
+    <section id="plotbox" class="hide">
+      <h2>Effect with 95% interval</h2>
+      <div id="plot"></div>
+      <p class="note">Each bar is the likely range of the true effect. The solid line is zero (no effect). The dashed line is the smallest gain worth shipping.</p>
+    </section>
+    <section id="segbox" class="hide">
+      <h2>Segments</h2>
+      <div id="segtable"></div>
+      <p class="note">Testing many segments finds false winners by luck. The adjusted p-value (Holm) accounts for this. Trust the adjusted column.</p>
+    </section>
+
+    <section>
+      <h2>Does the engine work? Run simulations.</h2>
+      <p class="note">These runs use fake experiments where we know the true answer.</p>
+      <div class="actions">
+        <button class="ghost" data-study="error-rates" type="button">False wins and power</button>
+        <button class="ghost" data-study="peeking" type="button">Peeking every day</button>
+        <button class="ghost" data-study="segments" type="button">20 segments</button>
+      </div>
+      <div id="studyout"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const pct = (v, d = 2) => typeof v === "object" && v !== null ? `${(v.estimate * 100).toFixed(d)}% (95% simulation CI ${(v.ci95[0] * 100).toFixed(d)}–${(v.ci95[1] * 100).toFixed(d)}%)` : (v * 100).toFixed(d) + "%";
+const pts = v => (v >= 0 ? "+" : "") + (v * 100).toFixed(2);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtP = p => p < 0.0001 ? "<0.0001" : p.toFixed(4);
+
+// ----- segment rows -----
+const defaultSegs = [["Mobile",6000,540,6000,690],["Desktop",4000,460,4000,430]];
+function addSeg(v = ["",1000,100,1000,100]) {
+  const d = document.createElement("div");
+  d.className = "seg";
+  d.innerHTML = `<input aria-label="Segment name" value="${esc(v[0])}">` +
+    v.slice(1).map(x => `<input type="number" min="0" value="${x}">`).join("") +
+    `<button type="button" class="ghost small" aria-label="Remove segment">x</button>`;
+  d.querySelector("button").onclick = () => d.remove();
+  $("segs").appendChild(d);
+}
+defaultSegs.forEach(addSeg);
+$("addseg").onclick = () => addSeg();
+
+const arm = (u, c) => ({ users: +$(u).value, conversions: +$(c).value });
+
+function buildRequest() {
+  const segments = [...document.querySelectorAll("#segs .seg")].map(r => {
+    const i = r.querySelectorAll("input");
+    return { name: i[0].value || "Segment",
+             control: { users: +i[1].value, conversions: +i[2].value },
+             treatment: { users: +i[3].value, conversions: +i[4].value } };
+  });
+  return {
+    control: arm("cu", "cc"), treatment: arm("tu", "tc"),
+    alpha: +$("al").value, min_effect: +$("me").value / 100,
+    guardrails: [{ name: $("gn").value || "Guardrail",
+                   control: arm("gcu", "gcc"), treatment: arm("gtu", "gtc"), higher_is_worse: true }],
+    segments
+  };
+}
+
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  const j = await r.json();
+  if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : "Check your numbers: users must be above 1 and conversions cannot exceed users.");
+  return j;
+}
+
+// ----- interval plot -----
+function plot(rows, mde) {
+  const W = 640, left = 150, right = 20, rowH = 34, top = 10;
+  const H = top + rows.length * rowH + 34;
+  const lo = Math.min(...rows.map(r => r.ci_low), -mde, 0), hi = Math.max(...rows.map(r => r.ci_high), mde);
+  const pad = (hi - lo) * 0.08, a = lo - pad, b = hi + pad;
+  const x = v => left + (v - a) / (b - a) * (W - left - right);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Effect estimates with confidence intervals">`;
+  s += `<rect x="${x(-mde)}" y="${top}" width="${x(mde) - x(-mde)}" height="${rows.length * rowH}" fill="var(--line)" opacity=".45"/>`;
+  s += `<line x1="${x(0)}" x2="${x(0)}" y1="${top}" y2="${top + rows.length * rowH}" stroke="var(--ink)" stroke-width="1.5"/>`;
+  s += `<line x1="${x(mde)}" x2="${x(mde)}" y1="${top}" y2="${top + rows.length * rowH}" stroke="var(--ship)" stroke-dasharray="4 3"/>`;
+  rows.forEach((r, i) => {
+    const y = top + i * rowH + rowH / 2;
+    const col = r.kind === "main" ? "var(--accent)" : r.kind === "guard" ? "var(--cont)" : "var(--muted)";
+    s += `<text x="${left - 10}" y="${y + 4}" text-anchor="end">${esc(r.name)}</text>`;
+    s += `<line x1="${x(r.ci_low)}" x2="${x(r.ci_high)}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="3" stroke-linecap="round"/>`;
+    s += `<circle cx="${x(r.effect)}" cy="${y}" r="5" fill="${col}"/>`;
+  });
+  const ay = top + rows.length * rowH + 16;
+  [a + pad, 0, b - pad].forEach(v => { s += `<text class="m" x="${x(v)}" y="${ay}" text-anchor="middle">${pts(v)} pts</text>`; });
+  return s + "</svg>";
+}
+
+// ----- analyze -----
+$("run").onclick = async () => {
+  $("err").textContent = "";
+  try {
+    const d = await api("/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildRequest()) });
+    const m = d.main, rec = d.recommendation;
+    $("empty").classList.add("hide");
+    ["result", "plotbox"].forEach(i => $(i).classList.remove("hide"));
+    $("verdict").className = "verdict " + rec.decision;
+    $("verdict").innerHTML = `<div class="word">${rec.decision === "ship" ? "Ship it" : rec.decision === "reject" ? "Do not ship" : "Keep running"}</div><p>${esc(rec.reason)}</p>`;
+    $("facts").innerHTML =
+      `<span>Control <b>${pct(m.control_rate)}</b></span><span>Treatment <b>${pct(m.treatment_rate)}</b></span>` +
+      `<span>Effect <b>${pts(m.effect)} pts</b></span><span>Relative lift <b>${(m.relative_lift * 100).toFixed(1)}%</b></span>` +
+      `<span>p-value <b>${fmtP(m.p_value)}</b></span><span>Cohen's h <b>${m.effect_size.toFixed(3)}</b></span>` +
+      `<span>Power at your minimum gain <b>${(d.power_at_min_effect * 100).toFixed(0)}%</b></span>`;
+    const rows = [{ name: "Main metric", kind: "main", ...m }]
+      .concat(d.guardrails.map(g => ({ name: g.name + (g.breached ? " (worse)" : ""), kind: "guard", ...g })))
+      .concat(d.segments.map(s => ({ name: s.name, kind: "seg", ...s })));
+    $("plot").innerHTML = plot(rows, d.min_effect);
+    if (d.segments.length) {
+      $("segbox").classList.remove("hide");
+      $("segtable").innerHTML = `<table><tr><th>Segment</th><th>Effect (pts)</th><th>p raw</th><th>p adjusted</th><th>Real win?</th></tr>` +
+        d.segments.map(s => `<tr><td>${esc(s.name)}</td><td>${pts(s.effect)}</td><td>${fmtP(s.p_raw)}</td><td>${fmtP(s.p_holm)}</td>` +
+          `<td class="${s.significant_after_correction ? "yes" : "no"}">${s.significant_after_correction ? "yes" : s.significant_raw ? "raw only" : "no"}</td></tr>`).join("") + `</table>`;
+    } else $("segbox").classList.add("hide");
+  } catch (e) { $("err").textContent = e.message; }
+};
+
+// ----- simulations -----
+const studyText = {
+  "error-rates": s => `<h3>False wins and power (${s.n_sims} runs each)</h3>
+    <p>No real effect: flagged as a win <b>${pct(s.false_positive_rate, 1)}</b>. Target: about ${pct(s.alpha, 0)}.</p>
+    <p>Real +1 point effect, 15,000 users per group: caught <b>${pct(s.power, 0)}</b> (power).</p><p class="m">Seed: ${s.seed}. ${esc(s.note)}</p>`,
+  "peeking": s => `<h3>Peeking (${s.n_sims} runs, ${s.days} days, no real effect)</h3>
+    <p>Look once at the end: false win <b>${pct(s.false_win_look_once, 1)}</b>.</p>
+    <p>Look every day and stop at the first win: false win <b>${pct(s.false_win_peeking_daily, 1)}</b>.</p>
+    <p>Peek daily with Bonferroni correction: false win <b>${pct(s.false_win_peeking_with_bonferroni, 1)}</b>.</p><p class="m">${esc(s.sequential_method)}</p>`,
+  "segments": s => `<h3>${s.n_segments} segments, no real effect anywhere (${s.n_sims} runs)</h3>
+    <p>At least one segment looks like a winner: <b>${pct(s.false_find_raw, 0)}</b> of the time with raw p-values.</p>
+    <p>After Holm correction: <b>${pct(s.false_find_holm, 1)}</b>. After Benjamini-Hochberg: <b>${pct(s.false_find_bh, 1)}</b>.</p><p class="m">${esc(s.note)}</p>`
+};
+document.querySelectorAll("[data-study]").forEach(btn => btn.onclick = async () => {
+  const k = btn.dataset.study;
+  $("studyout").innerHTML = `<div class="study">Running ${k}. This takes a few seconds.</div>`;
+  try { $("studyout").innerHTML = `<div class="study">${studyText[k](await api("/simulate/" + k))}</div>`; }
+  catch (e) { $("studyout").innerHTML = `<div class="study err">${esc(e.message)}</div>`; }
+});
+</script>
+</body>
+</html>

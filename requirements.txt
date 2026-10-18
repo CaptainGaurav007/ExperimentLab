@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+numpy
+scipy      # used only in tests, to check the hand-written maths
+pytest
+httpx
